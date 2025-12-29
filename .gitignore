@@ -1,15 +1,23 @@
-# Remix compiler artifacts
-**/artifacts/
-**/artifacts/**
+# dependencies
+node_modules
 
-# Remix plugin state folders
-deps/
-states/
+# yarn
+.yarn/*
+!.yarn/patches
+!.yarn/plugins
+!.yarn/releases
+!.yarn/sdks
+!.yarn/versions
 
-# Debug info
-*.dbg.json
-*.tsbuildinfo
+# eslint
+.eslintcache
 
-# Optional
-.env
-.env.local
+# misc
+.DS_Store
+
+# IDE
+.vscode
+.idea
+
+# cli
+dist
