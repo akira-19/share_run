@@ -1,0 +1,158 @@
+<!doctype html>
+<html lang="ja">
+    <head>
+        <meta charset="UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1" />
+        <title>Shared Server Runtime | Create Session</title>
+        <link rel="preconnect" href="https://fonts.googleapis.com" />
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+        <link
+            href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,600&family=Space+Grotesk:wght@400;500;600&display=swap"
+            rel="stylesheet"
+        />
+        <link rel="stylesheet" href="styles.css" />
+    </head>
+    <body>
+        <div class="aura"></div>
+        <div class="page">
+            <header class="hero">
+                <p class="eyebrow">Shared Server Runtime</p>
+                <h1>Session Console</h1>
+                <p class="lead">
+                    Create a session or deposit into one. Transactions are sent
+                    from your connected wallet.
+                </p>
+            </header>
+
+            <main class="card">
+                <div class="forms">
+                    <form id="create-session-form" class="panel">
+                        <div class="panel-head">
+                            <h2>Create Session</h2>
+                            <p>Define capacity and timing for a new session.</p>
+                        </div>
+                        <div class="grid">
+                            <label>
+                                <span>Instance ID</span>
+                                <input
+                                    id="instanceId"
+                                    name="instanceId"
+                                    type="text"
+                                    placeholder="1"
+                                    required
+                                />
+                            </label>
+
+                            <label>
+                                <span>Max Participants</span>
+                                <input
+                                    id="maxParticipants"
+                                    name="maxParticipants"
+                                    type="number"
+                                    min="1"
+                                    step="1"
+                                    placeholder="3"
+                                    required
+                                />
+                            </label>
+
+                            <label>
+                                <span>Start At (unix seconds)</span>
+                                <input
+                                    id="startAt"
+                                    name="startAt"
+                                    type="number"
+                                    min="0"
+                                    step="1"
+                                    placeholder="1730000000"
+                                    required
+                                />
+                            </label>
+
+                            <label>
+                                <span>Duration (seconds)</span>
+                                <input
+                                    id="durationSec"
+                                    name="durationSec"
+                                    type="number"
+                                    min="1"
+                                    step="1"
+                                    placeholder="3600"
+                                    required
+                                />
+                            </label>
+                        </div>
+                        <button type="submit" class="primary">
+                            Create Session
+                        </button>
+                    </form>
+
+                    <form id="approve-form" class="panel">
+                        <div class="panel-head">
+                            <h2>Approve USDC</h2>
+                            <p>Allow the runtime contract to pull your USDC.</p>
+                        </div>
+                        <div class="grid">
+                            <label>
+                                <span>Approve Amount (USDC, 6 decimals)</span>
+                                <input
+                                    id="approveAmount"
+                                    name="approveAmount"
+                                    type="text"
+                                    placeholder="1000000"
+                                    required
+                                />
+                            </label>
+                        </div>
+                        <button type="submit" class="primary">Approve</button>
+                    </form>
+
+                    <form id="deposit-form" class="panel">
+                        <div class="panel-head">
+                            <h2>Deposit</h2>
+                            <p>Send USDC to the session funding pool.</p>
+                        </div>
+                        <div class="grid">
+                            <label>
+                                <span>Session ID</span>
+                                <input
+                                    id="depositSessionId"
+                                    name="depositSessionId"
+                                    type="text"
+                                    placeholder="12"
+                                    required
+                                />
+                            </label>
+
+                            <label>
+                                <span>Amount (USDC, 6 decimals)</span>
+                                <input
+                                    id="depositAmount"
+                                    name="depositAmount"
+                                    type="text"
+                                    placeholder="1000000"
+                                    required
+                                />
+                            </label>
+                        </div>
+                        <button type="submit" class="primary">Deposit</button>
+                    </form>
+                </div>
+
+                <section class="status">
+                    <div>
+                        <h2>Status</h2>
+                        <p id="statusText">Checking wallet...</p>
+                    </div>
+                    <div class="pill" id="chainPill">Chain: -</div>
+                </section>
+
+                <section class="log" aria-live="polite">
+                    <pre id="logOutput">Ready.</pre>
+                </section>
+            </main>
+        </div>
+
+        <script type="module" src="app.js"></script>
+    </body>
+</html>

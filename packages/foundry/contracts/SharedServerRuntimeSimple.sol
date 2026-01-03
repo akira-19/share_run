@@ -19,6 +19,7 @@ contract SharedServerRuntimeSimple is ReentrancyGuard {
     ============================================================= */
 
     IERC20 public immutable USDC;
+    address public immutable owner;
 
     /* =============================================================
                                 PLAN
@@ -142,6 +143,7 @@ contract SharedServerRuntimeSimple is ReentrancyGuard {
         require(usdc != address(0), "USDC_ZERO");
 
         USDC = IERC20(usdc);
+        owner = msg.sender;
 
         ratePerSecond[Plan.Small] = smallRate;
         ratePerSecond[Plan.Medium] = mediumRate;
@@ -152,21 +154,16 @@ contract SharedServerRuntimeSimple is ReentrancyGuard {
                               INSTANCE
     ============================================================= */
 
-    function createInstance(
-        Plan planId,
-        address provider
-    ) external returns (uint64 instanceId) {
-        require(provider != address(0), "PROVIDER_ZERO");
-
+    function createInstance(Plan planId) external returns (uint64 instanceId) {
         instanceId = ++instanceCount;
 
         instances[instanceId] = Instance({
             planId: planId,
-            provider: provider,
+            provider: owner,
             enabled: true
         });
 
-        emit InstanceCreated(instanceId, planId, provider);
+        emit InstanceCreated(instanceId, planId, owner);
     }
 
     /* =============================================================
@@ -221,14 +218,7 @@ contract SharedServerRuntimeSimple is ReentrancyGuard {
         require(s.maxParticipants != 0, "SESSION_NOT_FOUND");
         require(s.status == SessionStatus.Funding, "NOT_FUNDING");
 
-        Participant storage p = participants[sessionId][msg.sender];
-        require(!p.joined, "ALREADY_JOINED");
-        require(s.joinedCount < s.maxParticipants, "FULL");
-
-        p.joined = true;
-        s.joinedCount++;
-
-        emit Joined(sessionId, msg.sender);
+        _joinIfNeeded(s, sessionId);
     }
 
     function deposit(uint64 sessionId, uint256 amount) external nonReentrant {
@@ -238,13 +228,7 @@ contract SharedServerRuntimeSimple is ReentrancyGuard {
         require(s.status == SessionStatus.Funding, "NOT_FUNDING");
         require(s.maxParticipants != 0, "SESSION_NOT_FOUND");
 
-        Participant storage p = participants[sessionId][msg.sender];
-        if (!p.joined) {
-            require(s.joinedCount < s.maxParticipants, "FULL");
-            p.joined = true;
-            s.joinedCount++;
-            emit Joined(sessionId, msg.sender);
-        }
+        Participant storage p = _joinIfNeeded(s, sessionId);
 
         uint256 beforeAmount = p.deposited;
 
@@ -330,6 +314,19 @@ contract SharedServerRuntimeSimple is ReentrancyGuard {
         if (s.totalDeposited >= totalRequired) {
             s.status = SessionStatus.Active;
             emit Finalized(sessionId, s.status);
+        }
+    }
+
+    function _joinIfNeeded(
+        Session storage s,
+        uint64 sessionId
+    ) internal returns (Participant storage p) {
+        p = participants[sessionId][msg.sender];
+        if (!p.joined) {
+            require(s.joinedCount < s.maxParticipants, "FULL");
+            p.joined = true;
+            s.joinedCount++;
+            emit Joined(sessionId, msg.sender);
         }
     }
 
