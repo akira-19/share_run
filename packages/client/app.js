@@ -147,6 +147,23 @@ const handleError = (error) => {
   setLog(error?.shortMessage || error?.message || "Unknown error.");
 };
 
+const explainRevert = async (hash, receipt) => {
+  try {
+    const publicClient = getPublicClient();
+    const tx = await publicClient.getTransaction({ hash });
+    await publicClient.call({
+      to: tx.to,
+      data: tx.input,
+      account: tx.from,
+      value: tx.value,
+      blockNumber: receipt.blockNumber,
+    });
+  } catch (error) {
+    return error?.shortMessage || error?.message || null;
+  }
+  return null;
+};
+
 const findSessionCreated = (receipt) => {
   for (const log of receipt.logs || []) {
     try {
@@ -227,6 +244,12 @@ formCreate.addEventListener("submit", async (event) => {
     setStatus("Waiting for confirmation...");
 
     const receipt = await getPublicClient().waitForTransactionReceipt({ hash });
+    if (receipt.status === "reverted") {
+      const reason = await explainRevert(hash, receipt);
+      setStatus("Transaction reverted.");
+      setLog(reason ? `Revert reason: ${reason}` : `Tx reverted: ${hash}`);
+      return;
+    }
     const sessionId = findSessionCreated(receipt);
 
     if (sessionId !== null) {
@@ -281,7 +304,13 @@ formApprove.addEventListener("submit", async (event) => {
 
     setStatus("Waiting for confirmation...");
 
-    await getPublicClient().waitForTransactionReceipt({ hash });
+    const receipt = await getPublicClient().waitForTransactionReceipt({ hash });
+    if (receipt.status === "reverted") {
+      const reason = await explainRevert(hash, receipt);
+      setStatus("Transaction reverted.");
+      setLog(reason ? `Revert reason: ${reason}` : `Tx reverted: ${hash}`);
+      return;
+    }
 
     setStatus("Approve confirmed.");
     setLog(`Tx hash: ${hash}`);
@@ -334,7 +363,13 @@ formDeposit.addEventListener("submit", async (event) => {
 
     setStatus("Waiting for confirmation...");
 
-    await getPublicClient().waitForTransactionReceipt({ hash });
+    const receipt = await getPublicClient().waitForTransactionReceipt({ hash });
+    if (receipt.status === "reverted") {
+      const reason = await explainRevert(hash, receipt);
+      setStatus("Transaction reverted.");
+      setLog(reason ? `Revert reason: ${reason}` : `Tx reverted: ${hash}`);
+      return;
+    }
 
     setStatus("Deposit confirmed.");
     setLog(`Tx hash: ${hash}`);
