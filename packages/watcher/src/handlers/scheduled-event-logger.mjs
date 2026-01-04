@@ -11,6 +11,9 @@ import { decodeEventLog, hexToBigInt, numberToHex, parseAbiItem } from "viem";
 const sessionCreatedEvent = parseAbiItem(
   "event SessionCreated(uint64 indexed sessionId, uint64 indexed instanceId, uint64 startAt, uint32 durationSec, uint32 maxParticipants, uint256 requiredPerUser)",
 );
+const depositedEvent = parseAbiItem(
+  "event Deposited(uint64 indexed sessionId, address indexed user, uint256 amount, uint256 totalUserDeposit)",
+);
 
 const rpcRequest = async (rpcUrl, method, params) => {
   const response = await fetch(rpcUrl, {
@@ -71,8 +74,10 @@ export const scheduledEventLoggerHandler = async (event, context) => {
   // https://docs.aws.amazon.com/lambda/latest/dg/nodejs-prog-model-logging.html
   console.info(JSON.stringify(event));
 
-  const rpcUrl = process.env.RPC_URL;
-  const contractAddress = process.env.CONTRACT_ADDRESS;
+  const rpcUrl = process.env.RPC_URL || "https://avalanche-fuji.drpc.org";
+  const contractAddress =
+    process.env.CONTRACT_ADDRESS ||
+    "0xa5A54985B061B9Ea2Ef3a29A3B0e7781E9d100cF";
   if (!rpcUrl || !contractAddress) {
     console.warn("RPC_URL or CONTRACT_ADDRESS is not set; skipping log fetch.");
     await handleEc2Action();
@@ -117,6 +122,41 @@ export const scheduledEventLoggerHandler = async (event, context) => {
       console.log(JSON.stringify(structured));
     } catch (error) {
       console.warn("Failed to decode SessionCreated log", error);
+    }
+  }
+
+  const depositLogs = await rpcRequest(rpcUrl, "eth_getLogs", [
+    {
+      address: contractAddress,
+      fromBlock: numberToHex(fromBlock),
+      toBlock: "latest",
+      topics: [depositedEvent.hash],
+    },
+  ]);
+
+  for (const log of depositLogs) {
+    try {
+      const decoded = decodeEventLog({
+        abi: [depositedEvent],
+        data: log.data,
+        topics: log.topics,
+      });
+      const args = decoded.args;
+
+      const structured = {
+        event: "Deposited",
+        sessionId: args.sessionId.toString(),
+        user: args.user,
+        amount: args.amount.toString(),
+        totalUserDeposit: args.totalUserDeposit.toString(),
+        blockNumber: log.blockNumber,
+        transactionHash: log.transactionHash,
+        logIndex: log.logIndex,
+      };
+
+      console.log(JSON.stringify(structured));
+    } catch (error) {
+      console.warn("Failed to decode Deposited log", error);
     }
   }
 

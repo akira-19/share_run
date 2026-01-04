@@ -25,6 +25,8 @@ const depositAmountInput = document.getElementById("depositAmount");
 
 const CONTRACT_ADDRESS = "0xa5A54985B061B9Ea2Ef3a29A3B0e7781E9d100cF";
 const USDC_ADDRESS = "0x5425890298aed601595a70AB815c96711a31Bc65";
+const API_ENDPOINT =
+  "https://l9a3c99wxd.execute-api.ap-northeast-1.amazonaws.com/Prod/";
 
 const sessionAbi = parseAbi([
   "function createSession(uint64 instanceId, uint32 maxParticipants, uint64 startAt, uint32 durationSec) external returns (uint64)",
@@ -373,6 +375,22 @@ formDeposit.addEventListener("submit", async (event) => {
 
     setStatus("Deposit confirmed.");
     setLog(`Tx hash: ${hash}`);
+
+    try {
+      const response = await fetch(API_ENDPOINT, {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ txHash: hash }),
+      });
+      const responseText = await response.text();
+      setLog(
+        `Tx hash: ${hash}\nAPI status: ${response.status}\n${responseText}`,
+      );
+    } catch (error) {
+      setLog(
+        `Tx hash: ${hash}\nAPI error: ${error?.message || "Unknown error."}`,
+      );
+    }
   } catch (error) {
     handleError(error);
   } finally {
